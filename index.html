@@ -380,6 +380,11 @@
                         <button id="scan-btn" style="display: none;">START 10S SCAN</button>
                     </div>
 
+                    <div style="margin-top: 10px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
+                        <label for="server-ip-input" style="font-weight: bold;">SERVER IP:</label>
+                        <input type="text" id="server-ip-input" placeholder="e.g. 192.168.x.x" style="padding: 4px 8px; border: 2px solid black; font-family: inherit; font-size: 1.1rem; width: 170px;">
+                    </div>
+
                     <div class="legend-box">
                         <div class="legend-title">LESION CLASSIFICATION TAXONOMY</div>
                         <div class="legend-items">
@@ -581,6 +586,26 @@
             }, 100);
         }
 
+        function getApiUrl() {
+            const inputVal = document.getElementById('server-ip-input')?.value.trim();
+            if (inputVal) {
+                const hostOnly = inputVal.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+                return `http://${hostOnly}:8001/detect`;
+            }
+            const defaultHost = (window.location.hostname && window.location.hostname !== 'file:') 
+                ? window.location.hostname 
+                : 'localhost';
+            return `http://${defaultHost}:8001/detect`;
+        }
+
+        // Set default input placeholder
+        document.addEventListener('DOMContentLoaded', () => {
+            const ipInput = document.getElementById('server-ip-input');
+            if (ipInput && window.location.hostname && window.location.hostname !== 'file:') {
+                ipInput.value = window.location.hostname;
+            }
+        });
+
         async function runScanLoop() {
             if (!isScanning) return;
 
@@ -596,8 +621,9 @@
                 const formData = new FormData();
                 formData.append('file', blob, 'frame.jpg');
 
+                const targetUrl = getApiUrl();
                 try {
-                    const response = await fetch('http://localhost:8001/detect', {
+                    const response = await fetch(targetUrl, {
                         method: 'POST',
                         body: formData
                     });
@@ -610,9 +636,12 @@
                             bestFrameDetections = result.detections;
                             drawDetectionsOnCanvas(result.detections, true);
                         }
+                    } else {
+                        showError(`API ERROR (${response.status}): Cannot reach ${targetUrl}`);
                     }
                 } catch (err) {
                     console.error("Scan frame error:", err);
+                    showError(`CONNECT ERROR: Unable to reach ${targetUrl}. On mobile, enter your Mac/PC local IP (e.g. 192.168.X.X) in SERVER IP.`);
                 }
 
                 // Continue scanning loop if still within 10s
