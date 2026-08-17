@@ -1,0 +1,9 @@
+This file records that the user has been notified of the NCBI PubMed disclaimer and policies.
+Disclaimers and policies links:
+- NCBI Disclaimer: https://pubmed.ncbi.nlm.nih.gov/disclaimer/
+- NCBI Policies: https://www.ncbi.nlm.nih.gov/home/about/policies/
+
+Always verify and respect the specific license of any papers retrieved for text mining, redistribution, or reuse.
+
+Notified on: 2026-08-03
+Timestamp: 1722709200

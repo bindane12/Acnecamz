@@ -1,0 +1,11 @@
+# YOLOv8 Acne Detection configuration
+path: /Users/binmac/Desktop/Fightacne app/dataset
+train: images/train
+val: images/val
+
+names:
+  0: comedone
+  1: papule
+  2: pustule
+  3: nodule_cyst
+  4: hyperpigmentation

@@ -1,0 +1,310 @@
+{
+  "comedone": {
+    "actives": [
+      {
+        "name": "Salicylic Acid (BHA)",
+        "concentration": "2%",
+        "scientific_basis": "Lipid-soluble beta-hydroxy acid that penetrates into pilosebaceous units to dissolve intercellular desmosomes and sebum plugs, preventing microcomedone formation.",
+        "evidence": {
+          "citation": "Zaenglein AL, et al. (2016)",
+          "title": "Guidelines of care for the management of acne vulgaris.",
+          "journal": "J Am Acad Dermatol",
+          "pmid": "26897386"
+        }
+      },
+      {
+        "name": "Topical Retinoids (Adapalene)",
+        "concentration": "0.1%",
+        "scientific_basis": "Consensus first-line treatment for comedonal acne. Binds nuclear retinoic acid receptors (RAR-beta/gamma) to normalize follicular desquamation and increase cell turnover.",
+        "evidence": {
+          "citation": "Thielitz A, et al. (2008)",
+          "title": "Topical retinoids in acne - an evidence-based overview.",
+          "journal": "J Dtsch Dermatol Ges",
+          "pmid": "18801149"
+        }
+      },
+      {
+        "name": "Glycolic Acid (AHA)",
+        "concentration": "5-10%",
+        "scientific_basis": "Alpha-hydroxy acid that exfoliates the stratum corneum by decreasing corneocyte cohesion, aiding comedone clearance and improving skin texture.",
+        "evidence": {
+          "citation": "Sharad J. (2013)",
+          "title": "Glycolic acid peel therapy – a current review.",
+          "journal": "Clin Cosmet Investig Dermatol",
+          "pmid": "24363586"
+        }
+      }
+    ]
+  },
+  "papule": {
+    "actives": [
+      {
+        "name": "Benzoyl Peroxide (BPO)",
+        "concentration": "2.5-5%",
+        "scientific_basis": "Generates free radicals/singlet oxygen within follicles, rapidly reducing Cutibacterium acnes load without inducing bacterial resistance.",
+        "evidence": {
+          "citation": "Sagransky M, et al. (2009)",
+          "title": "Benzoyl peroxide: a review of its mechanism of action and clinical efficacy.",
+          "journal": "Dermatol Online J",
+          "pmid": "19588923"
+        }
+      },
+      {
+        "name": "Niacinamide (Topical)",
+        "concentration": "4-5%",
+        "scientific_basis": "Potent anti-inflammatory agent that inhibits IL-8 and neutrophil chemotaxis induced by C. acnes while suppressing cutaneous sebum synthesis.",
+        "evidence": {
+          "citation": "Khodaeiani E, et al. (2013)",
+          "title": "Topical 4% niacinamide vs. 1% clindamycin in moderate inflammatory acne.",
+          "journal": "Int J Dermatol",
+          "pmid": "23782354"
+        }
+      },
+      {
+        "name": "Clindamycin + BPO Combination",
+        "concentration": "1% / 5%",
+        "scientific_basis": "Synergistic antimicrobial action combining lincosamide protein synthesis inhibition with oxidative bactericidal effect to suppress papular flare-ups.",
+        "evidence": {
+          "citation": "Lookingbill DP, et al. (1997)",
+          "title": "Treatment of acne with a combination clindamycin/benzoyl peroxide gel.",
+          "journal": "J Am Acad Dermatol",
+          "pmid": "9326925"
+        }
+      }
+    ]
+  },
+  "pustule": {
+    "actives": [
+      {
+        "name": "Benzoyl Peroxide (BPO)",
+        "concentration": "2.5-5%",
+        "scientific_basis": "Rapid bactericidal agent against C. acnes in pus-filled lesions, effectively clearing follicular oxidative microenvironments.",
+        "evidence": {
+          "citation": "Sagransky M, et al. (2009)",
+          "title": "Benzoyl peroxide: mechanism of action and clinical efficacy.",
+          "journal": "Dermatol Online J",
+          "pmid": "19588923"
+        }
+      },
+      {
+        "name": "Dapsone (Topical Gel)",
+        "concentration": "5-7.5%",
+        "scientific_basis": "Sulfone compound with direct anti-inflammatory action by suppressing reactive oxygen species generation from polymorphonuclear leukocytes in pustular lesions.",
+        "evidence": {
+          "citation": "Draelos ZD, et al. (2016)",
+          "title": "Once-daily dapsone gel 7.5% for treatment of acne vulgaris.",
+          "journal": "J Drugs Dermatol",
+          "pmid": "27050698"
+        }
+      },
+      {
+        "name": "Zinc PCA / Topical Zinc",
+        "concentration": "1-2%",
+        "scientific_basis": "Inhibits 5-alpha reductase activity to lower sebum output and suppresses C. acnes lipases and inflammatory cytokine cascades.",
+        "evidence": {
+          "citation": "Dréno B, et al. (2001)",
+          "title": "Multicenter randomized comparative double-blind study evaluating topical zinc versus erythromycin in acne.",
+          "journal": "Dermatology",
+          "pmid": "11586012"
+        }
+      }
+    ]
+  },
+  "hyperpigmentation": {
+    "actives": [
+      {
+        "name": "Azelaic Acid",
+        "concentration": "10-20%",
+        "scientific_basis": "Reversible competitive inhibitor of tyrosinase that selectively targets hyperactive, abnormal melanocytes to diminish post-inflammatory hyperpigmentation (PIH).",
+        "evidence": {
+          "citation": "Sieber MP, et al. (2009)",
+          "title": "Azelaic acid: review of pharmacological properties and therapeutic efficacy.",
+          "journal": "Cutis",
+          "pmid": "19363903"
+        }
+      },
+      {
+        "name": "Tranexamic Acid",
+        "concentration": "3-5%",
+        "scientific_basis": "Inhibits plasminogen activator system and reduces melanocyte-keratinocyte interactions triggered by UV and inflammatory mediators.",
+        "evidence": {
+          "citation": "Zhu JW, et al. (2020)",
+          "title": "Tranexamic acid in dark spot and post-inflammatory pigmentation management.",
+          "journal": "J Cosmet Dermatol",
+          "pmid": "32027787"
+        }
+      },
+      {
+        "name": "L-Ascorbic Acid (Vitamin C)",
+        "concentration": "10-15%",
+        "scientific_basis": "Potent antioxidant that interacts with copper ions at tyrosinase active site to inhibit melanin production while scavenging free radicals.",
+        "evidence": {
+          "citation": "Telang PS. (2013)",
+          "title": "Vitamin C in dermatology.",
+          "journal": "Indian Dermatol Online J",
+          "pmid": "23964112"
+        }
+      }
+    ]
+  },
+  "nodule_cyst": {
+    "actives": [
+      {
+        "name": "Dermatologist Referral (Systemic Isotretinoin)",
+        "concentration": "0.5-1.0 mg/kg/day",
+        "scientific_basis": "First-line oral retinoid therapy addressing all 4 key acne pathogenic pathways: sebocyte apoptosis, follicular hyperkeratosis normalization, C. acnes suppression, and profound anti-inflammatory action.",
+        "evidence": {
+          "citation": "Layton A. (2009)",
+          "title": "The use of isotretinoin in the treatment of acne vulgaris.",
+          "journal": "Dermatoendocrinol",
+          "pmid": "20224689"
+        }
+      },
+      {
+        "name": "Spironolactone (Oral Anti-Androgen)",
+        "concentration": "50-100 mg/day",
+        "scientific_basis": "Blocks androgen receptors and inhibits 17-beta-hydroxysteroid dehydrogenase, effective for female hormonal deep nodular acne around the lower face.",
+        "evidence": {
+          "citation": "Leighton C, et al. (2017)",
+          "title": "Spironolactone for the treatment of acne in adult females.",
+          "journal": "J Clin Aesthet Dermatol",
+          "pmid": "28874932"
+        }
+      }
+    ]
+  },
+  "post_inflammatory_erythema": {
+    "actives": [
+      {
+        "name": "Centella Asiatica / Madecassoside",
+        "concentration": "0.5-1%",
+        "scientific_basis": "Promotes microvascular repair, enhances collagen synthesis, and suppresses vascular endothelial growth factor (VEGF) hyper-reactivity following acute cutaneous inflammation.",
+        "evidence": {
+          "citation": "Bylka W, et al. (2013)",
+          "title": "Centella asiatica in dermatology: an overview.",
+          "journal": "Phytother Res",
+          "pmid": "23436791"
+        }
+      },
+      {
+        "name": "Niacinamide (Topical)",
+        "concentration": "4%",
+        "scientific_basis": "Strengthens microvascular integrity and suppresses inflammatory signaling molecules (IL-6, TNF-alpha) causing persistent post-lesional macular redness.",
+        "evidence": {
+          "citation": "Hakozaki T, et al. (2002)",
+          "title": "The effect of niacinamide on reducing cutaneous pigmentation and erythema.",
+          "journal": "Br J Dermatol",
+          "pmid": "12100180"
+        }
+      }
+    ]
+  },
+  "seborrhea_oily": {
+    "actives": [
+      {
+        "name": "Zinc PCA",
+        "concentration": "1%",
+        "scientific_basis": "Regulates sebocyte lipid synthesis by inhibiting 5-alpha reductase activity and reducing sebum secretion rate without causing epidermal dehydration.",
+        "evidence": {
+          "citation": "Stamatas GN, et al. (2008)",
+          "title": "Facial seborrhea and sebum excretion control by topical zinc.",
+          "journal": "Int J Cosmet Sci",
+          "pmid": "18400030"
+        }
+      },
+      {
+        "name": "Green Tea Extract (EGCG)",
+        "concentration": "2-3%",
+        "scientific_basis": "Epigallocatechin-3-gallate (EGCG) targets IGF-1 signaling pathways in human sebocytes, modulating lipid production and reducing C. acnes inflammation.",
+        "evidence": {
+          "citation": "Yoon JY, et al. (2013)",
+          "title": "Epigallocatechin-3-gallate improves acne in a randomized controlled trial.",
+          "journal": "J Invest Dermatol",
+          "pmid": "23096708"
+        }
+      }
+    ]
+  },
+  "barrier_compromise": {
+    "actives": [
+      {
+        "name": "Ceramide Complex (1:3:1 ratio)",
+        "concentration": "1-2%",
+        "scientific_basis": "Replenishes intracellular lipid matrix of stratum corneum, restoring trans-epidermal water loss (TEWL) protection during active acne therapy.",
+        "evidence": {
+          "citation": "Del Rosso J, et al. (2016)",
+          "title": "The role of ceramides in skin barrier repair and acne management.",
+          "journal": "J Clin Aesthet Dermatol",
+          "pmid": "27386049"
+        }
+      },
+      {
+        "name": "Panthenol (Vitamin B5)",
+        "concentration": "2-5%",
+        "scientific_basis": "Acts as a humectant and epithelization precursor, accelerating barrier re-epithelialization and calming cutaneous irritation.",
+        "evidence": {
+          "citation": "Camargo FB Jr, et al. (2011)",
+          "title": "Skin moisturizing effects of panthenol-based formulations.",
+          "journal": "J Cosmet Sci",
+          "pmid": "21982351"
+        }
+      }
+    ]
+  },
+  "zone_pattern_correlations": {
+    "chin_jawline_inflammatory": {
+      "name": "Hormonal Distribution Pattern",
+      "description": "High concentration of inflammatory papules/nodules localized on the chin and jawline strongly correlates with endocrine/androgen-mediated sebaceous gland hypersensitivity.",
+      "clinical_recommendation": "Consider systemic anti-androgen evaluation (e.g. Spironolactone) or topical androgen receptor inhibitor alongside topical retinoids.",
+      "pmid": "28874932"
+    },
+    "tzone_comedones": {
+      "name": "Seborrheic T-Zone Pattern",
+      "description": "Dense comedonal clustering on forehead and nose correlates with high regional sebaceous gland density and hyperkeratinization.",
+      "clinical_recommendation": "Prioritize lipophilic keratolytic actives (Salicylic Acid 2%) combined with Zinc PCA to control sebum rate.",
+      "pmid": "18400030"
+    },
+    "cheek_friction_barrier": {
+      "name": "Cheek Barrier Compromise Pattern",
+      "description": "Localized inflammatory lesions on mid-cheeks frequently correlate with external friction (e.g., phone contact, pillowcases) and localized stratum corneum barrier disruption.",
+      "clinical_recommendation": "Integrate ceramide-rich barrier repair alongside gentle non-irritating antimicrobials.",
+      "pmid": "27386049"
+    }
+  },
+  "synergies_and_conflicts": {
+    "synergies": [
+      {
+        "pair": ["Topical Retinoids (Adapalene)", "Benzoyl Peroxide (BPO)"],
+        "name": "Epiduo Synergy Protocol",
+        "description": "Combining adapalene (keratolytic/anti-inflammatory) with benzoyl peroxide (bactericidal) provides superior clinical efficacy over monotherapy by targeting multiple pathogenic pathways simultaneously.",
+        "usage": "Use BPO in AM routine and Adapalene in PM routine to minimize irritation while maintaining peak efficacy."
+      },
+      {
+        "pair": ["Niacinamide (Topical)", "Salicylic Acid (BHA)"],
+        "name": "Pore Clearance & Barrier Shield Synergy",
+        "description": "Salicylic acid unclogs follicular pores while Niacinamide strengthens stratum corneum lipids and lowers sebum production.",
+        "usage": "Apply Niacinamide serum followed by BHA treatment."
+      },
+      {
+        "pair": ["Azelaic Acid", "Niacinamide (Topical)"],
+        "name": "Dual-Action Pigment & Erythema Defense",
+        "description": "Azelaic acid inhibits tyrosinase while Niacinamide inhibits melanosome transfer, providing synergistic fading of post-acne dark marks.",
+        "usage": "Layer Niacinamide before Azelaic acid application in morning routine."
+      }
+    ],
+    "conflicts": [
+      {
+        "pair": ["Topical Retinoids (Adapalene)", "Salicylic Acid (BHA)"],
+        "name": "Exfoliation Overload Risk",
+        "description": "Simultaneous application of high-potency retinoids and leave-on BHAs can compromise the skin barrier and cause excessive desquamation, erythema, and dryness.",
+        "resolution": "Alternate nights: Use Retinoid on Night A, BHA Exfoliant on Night B."
+      },
+      {
+        "pair": ["Topical Retinoids (Adapalene)", "Benzoyl Peroxide (BPO)"],
+        "name": "Co-Application Irritation Rule",
+        "description": "Applying unformulated retinoids and benzoyl peroxide at the exact same moment may trigger skin stinging. (Note: fixed-dose combination formulations handle this via chemical stabilization).",
+        "resolution": "Split timing: Benzoyl Peroxide in Morning (AM), Retinoid at Night (PM)."
+      }
+    ]
+  }
+}

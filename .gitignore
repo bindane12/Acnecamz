@@ -1,0 +1,21 @@
+# Python & Environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Large Model Weights (>100MB Git limit)
+*.pt
+*.onnx
+*.engine
+
+# Datasets & Runs
+ACNE04/
+dataset/
+runs/
+acne04_download_temp/
+
+# IDE
+.vscode/
+.idea/
