@@ -385,8 +385,8 @@
                     </div>
 
                     <div style="margin-top: 10px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
-                        <label for="server-ip-input" style="font-weight: bold;">SERVER IP:</label>
-                        <input type="text" id="server-ip-input" placeholder="Auto-detected (e.g. 192.168.x.x)" style="padding: 4px 8px; border: 2px solid black; font-family: inherit; font-size: 1.1rem; width: 220px;">
+                        <label for="server-ip-input" style="font-weight: bold;">API URL / SERVER IP:</label>
+                        <input type="text" id="server-ip-input" placeholder="e.g. https://xxxx.onrender.com or IP" style="padding: 4px 8px; border: 2px solid black; font-family: inherit; font-size: 1.1rem; width: 260px;">
                     </div>
 
                     <div class="legend-box">
@@ -680,23 +680,32 @@
 
         function getApiUrl() {
             const inputVal = document.getElementById('server-ip-input')?.value.trim();
-            
-            // 1. Full URL provided explicitly by user
+            const isPageHttps = window.location.protocol === 'https:';
+
+            // 1. Full URL provided explicitly by user (http://... or https://...)
             if (inputVal && (inputVal.startsWith('http://') || inputVal.startsWith('https://'))) {
+                if (isPageHttps && inputVal.startsWith('http://')) {
+                    showError("MIXED CONTENT WARNING: GitHub Pages is HTTPS. Your API URL must also start with https:// (e.g. Render or ngrok https URL).");
+                }
                 return inputVal.endsWith('/detect') ? inputVal : `${inputVal.replace(/\/$/, '')}/detect`;
             }
 
-            // 2. Custom host/IP entered manually (and not auto-filled default)
-            if (inputVal && inputVal !== window.location.hostname) {
+            // 2. Custom host/IP entered manually
+            if (inputVal) {
                 const hostOnly = inputVal.replace(/\/.*$/, '');
-                const proto = window.location.protocol === 'https:' ? 'https' : 'http';
+                const proto = isPageHttps ? 'https' : 'http';
                 return `${proto}://${hostOnly}:8001/detect`;
             }
 
-            // 3. Hosted Cloud Production Deployment (Render, Vercel, Railway, Cloud Run, AWS, Docker)
-            // Use current origin and relative path '/detect' over current protocol (HTTPS/HTTP)
+            // 3. GitHub Pages detection
+            const hn = window.location.hostname;
+            if (hn && hn.endsWith('github.io')) {
+                showError("GITHUB PAGES SETUP: GitHub Pages hosts static files. Enter your HTTPS backend URL (e.g. Render / ngrok https URL) in 'API URL / SERVER IP'.");
+                return `https://${hn}/detect`;
+            }
+
+            // 4. Other hosted production cloud deployments
             if (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
-                const hn = window.location.hostname;
                 const isLocal = (hn === 'localhost' || hn === '127.0.0.1' || hn.startsWith('192.168.') || hn.startsWith('10.') || hn.startsWith('172.'));
                 if (isLocal) {
                     const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
