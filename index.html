@@ -589,12 +589,21 @@
         function getApiUrl() {
             const inputVal = document.getElementById('server-ip-input')?.value.trim();
             if (inputVal) {
-                const hostOnly = inputVal.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+                if (inputVal.startsWith('http://') || inputVal.startsWith('https://')) {
+                    return inputVal.endsWith('/detect') ? inputVal : `${inputVal.replace(/\/$/, '')}/detect`;
+                }
+                const hostOnly = inputVal.replace(/\/.*$/, '');
                 return `http://${hostOnly}:8001/detect`;
             }
-            const defaultHost = (window.location.hostname && window.location.hostname !== 'file:') 
-                ? window.location.hostname 
-                : 'localhost';
+
+            // Production Cloud Deployment check:
+            // When hosted on a live cloud domain (e.g. Render, Vercel, AWS, Cloud Run), use production endpoint
+            const hn = window.location.hostname;
+            if (hn && hn !== 'localhost' && hn !== '127.0.0.1' && !hn.startsWith('192.168.') && !hn.startsWith('10.') && !hn.startsWith('172.')) {
+                return `${window.location.origin}/detect`;
+            }
+
+            const defaultHost = (hn && hn !== 'file:') ? hn : 'localhost';
             return `http://${defaultHost}:8001/detect`;
         }
 
