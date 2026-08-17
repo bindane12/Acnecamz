@@ -122,6 +122,14 @@ async def detect(file: UploadFile = File(...)):
         }
     }
 
+from fastapi.responses import FileResponse
+
+@app.get("/")
+async def read_index():
+    if os.path.exists("index.html"):
+        return FileResponse("index.html")
+    return {"status": "Acne Detection API is running. index.html not found."}
+
 @app.get("/health")
 def health():
     return {"status": "ok", "model": model.names}

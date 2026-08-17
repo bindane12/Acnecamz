@@ -359,7 +359,8 @@
                 <div class="scanner-column">
                     <div class="scanner-container">
                         <div class="video-wrapper">
-                            <video id="video" autoplay playsinline></video>
+                            <video id="video" autoplay playsinline muted></video>
+                            <img id="uploaded-img" style="display:none; position:absolute; width:100%; height:100%; object-fit:cover; z-index:4;" alt="Uploaded Skin Frame">
                             <canvas id="canvas"></canvas>
 
                             <!-- 10-Second Scan Overlay -->
@@ -375,14 +376,17 @@
                         </div>
                     </div>
 
-                    <div class="controls">
+                    <div class="controls" style="flex-wrap: wrap;">
                         <button id="start-btn">START CAMERA</button>
+                        <button id="flip-btn" style="display: none;">FLIP CAMERA 🔄</button>
+                        <button id="upload-btn">📷 UPLOAD / TAKE PHOTO</button>
+                        <input type="file" id="file-input" accept="image/*" capture="user" style="display: none;">
                         <button id="scan-btn" style="display: none;">START 10S SCAN</button>
                     </div>
 
                     <div style="margin-top: 10px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
                         <label for="server-ip-input" style="font-weight: bold;">SERVER IP:</label>
-                        <input type="text" id="server-ip-input" placeholder="e.g. 192.168.x.x" style="padding: 4px 8px; border: 2px solid black; font-family: inherit; font-size: 1.1rem; width: 170px;">
+                        <input type="text" id="server-ip-input" placeholder="Auto-detected (e.g. 192.168.x.x)" style="padding: 4px 8px; border: 2px solid black; font-family: inherit; font-size: 1.1rem; width: 220px;">
                     </div>
 
                     <div class="legend-box">
@@ -406,7 +410,7 @@
                         </div>
 
                         <div class="summary-box" id="skin-summary">
-                            Press <strong>"START 10S SCAN"</strong>. The system will scan your face for 10 seconds and generate a clear diagnosis & skincare recommendation.
+                            Press <strong>"START 10S SCAN"</strong> or upload a facial photo. The system will scan your facial skin and generate a clinical diagnosis & skincare recommendation.
                         </div>
 
                         <div>
@@ -476,10 +480,16 @@
 
     <script>
         const video = document.getElementById('video');
+        const uploadedImg = document.getElementById('uploaded-img');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        
         const startBtn = document.getElementById('start-btn');
+        const flipBtn = document.getElementById('flip-btn');
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
         const scanBtn = document.getElementById('scan-btn');
+        
         const statusText = document.getElementById('status-text');
         const errorMsg = document.getElementById('error-msg');
 
@@ -501,6 +511,10 @@
         let lastAnalysisResult = null;
         let bestFrameDetections = [];
 
+        let currentFacingMode = 'user'; // 'user' (front selfie) or 'environment' (back)
+        let currentStream = null;
+        let activePhotoElement = null;
+
         // Clock logic
         setInterval(() => {
             const d = new Date();
@@ -514,28 +528,106 @@
             statusText.textContent = 'STATUS: INITIALIZING CAMERA...';
 
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showError("ERROR: Browser blocks camera access. Run via localhost server.");
+                const isHttp = window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                if (isHttp) {
+                    showError("SECURITY RESTRICTION: Mobile browsers require HTTPS for live camera. Please use '📷 UPLOAD / TAKE PHOTO' or visit via https://");
+                } else {
+                    showError("CAMERA ERROR: Browser blocks camera access. Check permissions or use '📷 UPLOAD / TAKE PHOTO'");
+                }
                 return;
             }
 
+            // Clean up existing stream
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'user' }
-                });
+                // Switch back to video mode
+                uploadedImg.style.display = 'none';
+                video.style.display = 'block';
+                activePhotoElement = null;
+
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: currentFacingMode },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                currentStream = stream;
                 video.srcObject = stream;
 
-                video.onloadedmetadata = () => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
+                // Mirror front camera, do not mirror back camera
+                video.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+
+                video.onloadedmetadata = async () => {
+                    try {
+                        await video.play();
+                    } catch (playErr) {
+                        console.warn("Autoplay playback error:", playErr);
+                    }
+                    canvas.width = video.videoWidth || 640;
+                    canvas.height = video.videoHeight || 480;
                     startBtn.style.display = 'none';
-                    scanBtn.style.display = 'block';
-                    statusText.textContent = 'STATUS: CAMERA READY';
+                    flipBtn.style.display = 'inline-block';
+                    scanBtn.style.display = 'inline-block';
+                    statusText.textContent = `STATUS: CAMERA READY (${currentFacingMode.toUpperCase()})`;
                 };
             } catch (err) {
                 console.error("Camera Error:", err);
-                showError("CAMERA ERROR: Unable to access camera. Check permissions.");
+                showError("CAMERA ERROR: Unable to access camera. Use '📷 UPLOAD / TAKE PHOTO' button below.");
             }
         }
+
+        // Camera flip handler
+        flipBtn.addEventListener('click', () => {
+            currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+            startCamera();
+        });
+
+        // Photo upload / take photo handler
+        uploadBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            errorMsg.style.display = 'none';
+            statusText.textContent = 'STATUS: LOADING PHOTO...';
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Stop webcam if active
+                    if (currentStream) {
+                        currentStream.getTracks().forEach(track => track.stop());
+                        currentStream = null;
+                    }
+                    video.style.display = 'none';
+                    uploadedImg.src = event.target.result;
+                    uploadedImg.style.display = 'block';
+
+                    canvas.width = img.naturalWidth || 640;
+                    canvas.height = img.naturalHeight || 480;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    activePhotoElement = img;
+                    startBtn.style.display = 'none';
+                    flipBtn.style.display = 'none';
+                    scanBtn.style.display = 'inline-block';
+                    statusText.textContent = 'STATUS: PHOTO READY FOR SCAN';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
 
         function showError(msg) {
             errorMsg.textContent = msg;
@@ -559,13 +651,13 @@
             scanBtn.style.color = '#fff';
 
             progressOverlay.style.display = 'flex';
-            statusText.textContent = 'STATUS: 10S FACIAL SCAN IN PROGRESS... HOLD STILL';
+            statusText.textContent = 'STATUS: 10S FACIAL SCAN IN PROGRESS...';
             
             // Set temporary report HUD state
             severityBadge.textContent = 'SCANNING';
             severityBadge.style.background = '#FFFF00';
             severityBadge.style.color = 'black';
-            skinSummary.innerHTML = '⚡ <strong>SCANNING IN PROGRESS...</strong> Please hold still facing the camera for 10 seconds while the model maps your facial skin zones.';
+            skinSummary.innerHTML = '⚡ <strong>SCANNING IN PROGRESS...</strong> Please wait while the model maps your facial skin zones.';
 
             // Run detection loop during 10 seconds
             runScanLoop();
@@ -588,32 +680,33 @@
 
         function getApiUrl() {
             const inputVal = document.getElementById('server-ip-input')?.value.trim();
-            if (inputVal) {
-                if (inputVal.startsWith('http://') || inputVal.startsWith('https://')) {
-                    return inputVal.endsWith('/detect') ? inputVal : `${inputVal.replace(/\/$/, '')}/detect`;
-                }
-                const hostOnly = inputVal.replace(/\/.*$/, '');
-                return `http://${hostOnly}:8001/detect`;
+            
+            // 1. Full URL provided explicitly by user
+            if (inputVal && (inputVal.startsWith('http://') || inputVal.startsWith('https://'))) {
+                return inputVal.endsWith('/detect') ? inputVal : `${inputVal.replace(/\/$/, '')}/detect`;
             }
 
-            // Production Cloud Deployment check:
-            // When hosted on a live cloud domain (e.g. Render, Vercel, AWS, Cloud Run), use production endpoint
-            const hn = window.location.hostname;
-            if (hn && hn !== 'localhost' && hn !== '127.0.0.1' && !hn.startsWith('192.168.') && !hn.startsWith('10.') && !hn.startsWith('172.')) {
+            // 2. Custom host/IP entered manually (and not auto-filled default)
+            if (inputVal && inputVal !== window.location.hostname) {
+                const hostOnly = inputVal.replace(/\/.*$/, '');
+                const proto = window.location.protocol === 'https:' ? 'https' : 'http';
+                return `${proto}://${hostOnly}:8001/detect`;
+            }
+
+            // 3. Hosted Cloud Production Deployment (Render, Vercel, Railway, Cloud Run, AWS, Docker)
+            // Use current origin and relative path '/detect' over current protocol (HTTPS/HTTP)
+            if (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
+                const hn = window.location.hostname;
+                const isLocal = (hn === 'localhost' || hn === '127.0.0.1' || hn.startsWith('192.168.') || hn.startsWith('10.') || hn.startsWith('172.'));
+                if (isLocal) {
+                    const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
+                    return `${proto}//${hn}:8001/detect`;
+                }
                 return `${window.location.origin}/detect`;
             }
 
-            const defaultHost = (hn && hn !== 'file:') ? hn : 'localhost';
-            return `http://${defaultHost}:8001/detect`;
+            return `http://localhost:8001/detect`;
         }
-
-        // Set default input placeholder
-        document.addEventListener('DOMContentLoaded', () => {
-            const ipInput = document.getElementById('server-ip-input');
-            if (ipInput && window.location.hostname && window.location.hostname !== 'file:') {
-                ipInput.value = window.location.hostname;
-            }
-        });
 
         async function runScanLoop() {
             if (!isScanning) return;
@@ -622,7 +715,13 @@
             tempCanvas.width = canvas.width;
             tempCanvas.height = canvas.height;
             const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+            // Render active photo or webcam frame
+            if (activePhotoElement) {
+                tempCtx.drawImage(activePhotoElement, 0, 0, tempCanvas.width, tempCanvas.height);
+            } else {
+                tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            }
 
             tempCanvas.toBlob(async (blob) => {
                 if (!blob || !isScanning) return;
@@ -650,21 +749,21 @@
                     }
                 } catch (err) {
                     console.error("Scan frame error:", err);
-                    showError(`CONNECT ERROR: Unable to reach ${targetUrl}. On mobile, enter your Mac/PC local IP (e.g. 192.168.X.X) in SERVER IP.`);
+                    showError(`CONNECT ERROR: Unable to reach API at ${targetUrl}. Check host protocol/URL.`);
                 }
 
-                // Continue scanning loop if still within 10s
-                if (isScanning) {
+                // Continue scanning loop if still within 10s and using live video
+                if (isScanning && !activePhotoElement) {
                     setTimeout(runScanLoop, 150);
                 }
-            }, 'image/jpeg', 0.8);
+            }, 'image/jpeg', 0.85);
         }
 
         function drawDetectionsOnCanvas(detections, isScanningAnimation = false) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Draw facial zone boundary guide overlay during scanning
-            if (isScanningAnimation) {
+            if (isScanningAnimation && !activePhotoElement) {
                 ctx.strokeStyle = '#00FF00';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([8, 8]);
@@ -685,8 +784,9 @@
             detections.forEach(det => {
                 const strokeColor = det.color || '#00FF00';
 
-                // Programmatically mirror x-coordinate for selfie camera mode:
-                const drawX = canvas.width - det.x;
+                // Programmatically mirror x-coordinate only for selfie camera mode:
+                const isMirroredSelfie = !activePhotoElement && currentFacingMode === 'user';
+                const drawX = isMirroredSelfie ? (canvas.width - det.x) : det.x;
 
                 // Bounding Circle
                 ctx.beginPath();
