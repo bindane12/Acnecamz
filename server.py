@@ -22,6 +22,10 @@ app.add_middleware(
 import glob
 
 def get_latest_model_path():
+    # 0. Check root directory best.pt
+    if os.path.exists("best.pt"):
+        return "best.pt"
+        
     # 1. Check custom path in acne04v2
     custom_path = "acne04v2/yolo_scripts/runs/trained_acne_seg/yolov8x_1280_acne_detection_09022024_/weights/best.pt"
     if os.path.exists(custom_path):
@@ -135,4 +139,5 @@ def health():
     return {"status": "ok", "model": model.names}
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host="0.0.0.0", port=8001, reload=True)
+    port = int(os.environ.get("PORT", 7860))
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=True)

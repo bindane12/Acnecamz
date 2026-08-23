@@ -7,6 +7,7 @@ __pycache__/
 
 # Large Model Weights (>100MB Git limit)
 *.pt
+!best.pt
 *.onnx
 *.engine
 
