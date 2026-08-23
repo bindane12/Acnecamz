@@ -6,7 +6,7 @@ colorTo: blue
 sdk: docker
 app_port: 7860
 pinned: false
-short_description: Vision for acne detection and clinical skin condition analysis
+short_description: Vision acne detection and skin analysis API
 ---
 
 # Acnecamz - AI Clinical Acne Detection & Analysis API
