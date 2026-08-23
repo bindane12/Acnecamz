@@ -21,14 +21,23 @@ app.add_middleware(
 
 import glob
 
+def is_valid_weights_file(path):
+    if not os.path.exists(path):
+        return False
+    # If the file is smaller than 100 KB, it's a Git LFS pointer text file, not binary weights
+    if os.path.getsize(path) < 100 * 1024:
+        print(f"Warning: {path} is only {os.path.getsize(path)} bytes (Git LFS pointer file, not binary weights).")
+        return False
+    return True
+
 def get_latest_model_path():
     # 0. Check root directory best.pt
-    if os.path.exists("best.pt"):
+    if is_valid_weights_file("best.pt"):
         return "best.pt"
         
     # 1. Check custom path in acne04v2
     custom_path = "acne04v2/yolo_scripts/runs/trained_acne_seg/yolov8x_1280_acne_detection_09022024_/weights/best.pt"
-    if os.path.exists(custom_path):
+    if is_valid_weights_file(custom_path):
         return custom_path
         
     # 2. Check for any weights/best.pt in runs/detect/
@@ -43,22 +52,30 @@ def get_latest_model_path():
         candidate_files.extend(glob.glob(pattern))
         
     if candidate_files:
-        # Sort by modification time to get the newest trained model
-        candidate_files.sort(key=os.path.getmtime, reverse=True)
-        return candidate_files[0]
+        valid_candidates = [f for f in candidate_files if is_valid_weights_file(f)]
+        if valid_candidates:
+            valid_candidates.sort(key=os.path.getmtime, reverse=True)
+            return valid_candidates[0]
         
     return None
 
-# Load YOLO model dynamically
+# Load YOLO model dynamically with robust fallback
+model = None
 model_path = get_latest_model_path()
 if model_path:
-    print(f"Loading custom trained YOLO model from {model_path}...")
-    model = YOLO(model_path)
-else:
+    try:
+        print(f"Loading custom trained YOLO model from {model_path} ({os.path.getsize(model_path)} bytes)...")
+        model = YOLO(model_path)
+        print("Custom YOLO model loaded successfully!")
+    except Exception as e:
+        print(f"Failed to load custom weights from {model_path}: {e}")
+        model = None
+
+if model is None:
     fallback_model = "yolov8n.pt"
-    print("No custom trained model found in runs/detect/.")
     print(f"Loading/downloading pre-trained baseline model: {fallback_model}...")
     model = YOLO(fallback_model)
+    print("Baseline model loaded successfully!")
 
 
 def bbox_to_circle(x1, y1, x2, y2):
@@ -73,58 +90,63 @@ import clinical_scoring
 
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
-    # Read image bytes
-    contents = await file.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-    if img is None:
-        return {"error": "Invalid image file"}
+    try:
+        # Read image bytes
+        contents = await file.read()
+        nparr = np.frombuffer(contents, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            return {"error": "Invalid image file. Unable to decode format."}
 
-    img_h, img_w = img.shape[:2]
+        img_h, img_w = img.shape[:2]
 
-    # Run inference
-    results = model(img, conf=0.25, verbose=False)
-    
-    raw_detections = []
-    
-    for result in results:
-        boxes = result.boxes
-        for box in boxes:
-            # Get box coordinates in pixels
-            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-            conf = float(box.conf.cpu().numpy()[0])
-            class_id = int(box.cls.cpu().numpy()[0])
-            
-            # Convert to circle coordinates
-            cx, cy, radius = bbox_to_circle(x1, y1, x2, y2)
-            
-            raw_detections.append({
-                "x": cx,
-                "y": cy,
-                "r": radius,
-                "conf": conf,
-                "class_id": class_id
-            })
-            
-    # Perform clinical facial analysis
-    analysis_result = clinical_scoring.analyze_facial_scan(raw_detections, img_w, img_h, image_matrix=img)
-    
-    return {
-        "detections": analysis_result["processed_detections"],
-        "analysis": {
-            "hayashi_grade": analysis_result["hayashi_grade"],
-            "severity_color": analysis_result["severity_color"],
-            "total_lesions": analysis_result["total_lesions"],
-            "total_counts": analysis_result["total_counts"],
-            "zone_breakdown": analysis_result["zone_breakdown"],
-            "skin_description": analysis_result["skin_description"],
-            "targeted_actives": analysis_result["targeted_actives"],
-            "scientific_evidence": analysis_result.get("scientific_evidence", []),
-            "clinical_correlations": analysis_result.get("clinical_correlations", {}),
-            "skincare_routine": analysis_result["skincare_routine"]
+        # Run inference
+        results = model(img, conf=0.25, verbose=False)
+        
+        raw_detections = []
+        
+        for result in results:
+            boxes = result.boxes
+            for box in boxes:
+                # Get box coordinates in pixels
+                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                conf = float(box.conf.cpu().numpy()[0])
+                class_id = int(box.cls.cpu().numpy()[0])
+                
+                # Convert to circle coordinates
+                cx, cy, radius = bbox_to_circle(x1, y1, x2, y2)
+                
+                raw_detections.append({
+                    "x": cx,
+                    "y": cy,
+                    "r": radius,
+                    "conf": conf,
+                    "class_id": class_id
+                })
+                
+        # Perform clinical facial analysis
+        analysis_result = clinical_scoring.analyze_facial_scan(raw_detections, img_w, img_h, image_matrix=img)
+        
+        return {
+            "detections": analysis_result["processed_detections"],
+            "analysis": {
+                "hayashi_grade": analysis_result["hayashi_grade"],
+                "severity_color": analysis_result["severity_color"],
+                "total_lesions": analysis_result["total_lesions"],
+                "total_counts": analysis_result["total_counts"],
+                "zone_breakdown": analysis_result["zone_breakdown"],
+                "skin_description": analysis_result["skin_description"],
+                "targeted_actives": analysis_result["targeted_actives"],
+                "scientific_evidence": analysis_result.get("scientific_evidence", []),
+                "clinical_correlations": analysis_result.get("clinical_correlations", {}),
+                "skincare_routine": analysis_result["skincare_routine"]
+            }
         }
-    }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Inference error: {str(e)}"}
 
 from fastapi.responses import FileResponse
 
