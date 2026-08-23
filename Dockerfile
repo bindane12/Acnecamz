@@ -24,4 +24,5 @@ COPY --chown=user:user . .
 # Expose standard Hugging Face port
 EXPOSE 7860
 
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]
+# Support dynamic port assignment from Render/Cloud Run/Railway ($PORT) with fallback to 7860
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-7860}"]
