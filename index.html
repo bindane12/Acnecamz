@@ -576,12 +576,27 @@
                     flipBtn.style.display = 'inline-block';
                     scanBtn.style.display = 'inline-block';
                     statusText.textContent = `STATUS: CAMERA READY (${currentFacingMode.toUpperCase()})`;
+                    ensureOverlayLoop();
                 };
             } catch (err) {
                 console.error("Camera Error:", err);
                 showError("CAMERA ERROR: Unable to access camera. Use '📷 UPLOAD / TAKE PHOTO' button below.");
             }
         }
+
+        // Automatic API Health Ping on Load to Pre-warm Cloud Instances
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const healthUrl = getApiUrl().replace('/detect', '/health');
+                const res = await fetch(healthUrl, { method: 'GET' });
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log("Backend online:", data);
+                }
+            } catch (e) {
+                console.log("Backend warm-up ping in background:", e);
+            }
+        });
 
         // Camera flip handler
         flipBtn.addEventListener('click', () => {
@@ -642,8 +657,29 @@
             start10SecondScan();
         });
 
+        let isScanInFlight = false;
+        let framesScannedCount = 0;
+        let liveDetectedLesions = [];
+
+        // Continuous overlay loop for face oval & live detections
+        let isOverlayLoopRunning = false;
+        function ensureOverlayLoop() {
+            if (isOverlayLoopRunning) return;
+            isOverlayLoopRunning = true;
+            function render() {
+                if (currentStream || activePhotoElement) {
+                    drawDetectionsOnCanvas(isScanning ? liveDetectedLesions : (bestFrameDetections || []));
+                }
+                requestAnimationFrame(render);
+            }
+            requestAnimationFrame(render);
+        }
+
         function start10SecondScan() {
             isScanning = true;
+            isScanInFlight = false;
+            framesScannedCount = 0;
+            liveDetectedLesions = [];
             scanStartTime = Date.now();
             scanBtn.disabled = true;
             scanBtn.textContent = 'SCANNING...';
@@ -657,7 +693,9 @@
             severityBadge.textContent = 'SCANNING';
             severityBadge.style.background = '#FFFF00';
             severityBadge.style.color = 'black';
-            skinSummary.innerHTML = '⚡ <strong>SCANNING IN PROGRESS...</strong> Please wait while the model maps your facial skin zones.';
+            skinSummary.innerHTML = '⚡ <strong>SCANNING IN PROGRESS...</strong> Please hold still while YOLO maps your facial skin zones.';
+
+            ensureOverlayLoop();
 
             // Run detection loop during 10 seconds
             runScanLoop();
@@ -685,7 +723,7 @@
             // 1. Full URL provided explicitly by user (http://... or https://...)
             if (inputVal && (inputVal.startsWith('http://') || inputVal.startsWith('https://'))) {
                 if (isPageHttps && inputVal.startsWith('http://')) {
-                    showError("MIXED CONTENT WARNING: GitHub Pages is HTTPS. Your API URL must also start with https:// (e.g. Render or ngrok https URL).");
+                    showError("MIXED CONTENT WARNING: HTTPS page cannot access HTTP. Use https:// URL.");
                 }
                 return inputVal.endsWith('/detect') ? inputVal : `${inputVal.replace(/\/$/, '')}/detect`;
             }
@@ -697,19 +735,14 @@
                 return `${proto}://${hostOnly}:8001/detect`;
             }
 
-            // 3. GitHub Pages detection
-            const hn = window.location.hostname;
-            if (hn && hn.endsWith('github.io')) {
-                showError("GITHUB PAGES SETUP: GitHub Pages hosts static files. Enter your HTTPS backend URL (e.g. Render / ngrok https URL) in 'API URL / SERVER IP'.");
-                return `https://${hn}/detect`;
-            }
-
-            // 4. Other hosted production cloud deployments
+            // 3. Current origin (Render cloud deployment or localhost)
             if (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
+                const hn = window.location.hostname;
                 const isLocal = (hn === 'localhost' || hn === '127.0.0.1' || hn.startsWith('192.168.') || hn.startsWith('10.') || hn.startsWith('172.'));
                 if (isLocal) {
                     const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
-                    return `${proto}//${hn}:8001/detect`;
+                    const port = window.location.port || '8001';
+                    return `${proto}//${hn}:${port}/detect`;
                 }
                 return `${window.location.origin}/detect`;
             }
@@ -719,21 +752,38 @@
 
         async function runScanLoop() {
             if (!isScanning) return;
+            if (isScanInFlight) return; // Prevent network congestion
 
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
+            const sourceEl = activePhotoElement || video;
+            if (!sourceEl) return;
 
-            // Render active photo or webcam frame
-            if (activePhotoElement) {
-                tempCtx.drawImage(activePhotoElement, 0, 0, tempCanvas.width, tempCanvas.height);
-            } else {
-                tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            const natW = activePhotoElement ? (activePhotoElement.naturalWidth || 640) : (video.videoWidth || 640);
+            const natH = activePhotoElement ? (activePhotoElement.naturalHeight || 480) : (video.videoHeight || 480);
+
+            // Scale to max 640px for ultra-fast network transfer & CPU inference
+            const maxDim = 640;
+            const scale = Math.min(1.0, maxDim / Math.max(natW, natH));
+            const targetW = Math.round(natW * scale);
+            const targetH = Math.round(natH * scale);
+
+            if (canvas.width !== targetW || canvas.height !== targetH) {
+                canvas.width = targetW;
+                canvas.height = targetH;
             }
 
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = targetW;
+            tempCanvas.height = targetH;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(sourceEl, 0, 0, targetW, targetH);
+
+            isScanInFlight = true;
+
             tempCanvas.toBlob(async (blob) => {
-                if (!blob || !isScanning) return;
+                if (!blob || !isScanning) {
+                    isScanInFlight = false;
+                    return;
+                }
 
                 const formData = new FormData();
                 formData.append('file', blob, 'frame.jpg');
@@ -747,32 +797,37 @@
 
                     if (response.ok) {
                         const result = await response.json();
-                        if (isScanning && result.detections) {
-                            // Store latest result and draw live scanning circles
-                            lastAnalysisResult = result;
-                            bestFrameDetections = result.detections;
-                            drawDetectionsOnCanvas(result.detections, true);
+                        framesScannedCount++;
+                        if (result.detections) {
+                            liveDetectedLesions = result.detections;
+                            // Keep best frame with highest lesion count
+                            if (!bestFrameDetections || result.detections.length >= (bestFrameDetections?.length || 0)) {
+                                bestFrameDetections = result.detections;
+                                lastAnalysisResult = result;
+                            }
+                            statusText.textContent = `STATUS: SCANNING... [FRAMES: ${framesScannedCount} | ACNE DETECTED: ${result.detections.length}]`;
                         }
                     } else {
                         showError(`API ERROR (${response.status}): Cannot reach ${targetUrl}`);
                     }
                 } catch (err) {
                     console.error("Scan frame error:", err);
-                    showError(`CONNECT ERROR: Unable to reach API at ${targetUrl}. Check host protocol/URL.`);
+                    showError(`CONNECT ERROR: Unable to reach API at ${targetUrl}.`);
+                } finally {
+                    isScanInFlight = false;
+                    // Trigger next frame quickly
+                    if (isScanning && !activePhotoElement) {
+                        setTimeout(runScanLoop, 60);
+                    }
                 }
-
-                // Continue scanning loop if still within 10s and using live video
-                if (isScanning && !activePhotoElement) {
-                    setTimeout(runScanLoop, 150);
-                }
-            }, 'image/jpeg', 0.85);
+            }, 'image/jpeg', 0.80);
         }
 
-        function drawDetectionsOnCanvas(detections, isScanningAnimation = false) {
+        function drawDetectionsOnCanvas(detections) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw facial zone boundary guide overlay during scanning
-            if (isScanningAnimation && !activePhotoElement) {
+            // 1. Draw facial zone boundary guide overlay whenever camera is active
+            if (!activePhotoElement) {
                 ctx.strokeStyle = '#00FF00';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([8, 8]);
@@ -786,34 +841,39 @@
                 ctx.font = '18px "VT323", monospace';
                 ctx.fillStyle = '#00FF00';
                 ctx.textAlign = 'center';
-                ctx.fillText("ALIGN FACE WITHIN OVAL", canvas.width / 2, (canvas.height / 2) - (canvas.height * 0.4) - 10);
+                const guideMsg = isScanning ? "SCANNING ACTIVE - HOLD STILL" : "ALIGN FACE WITHIN OVAL";
+                ctx.fillText(guideMsg, canvas.width / 2, (canvas.height / 2) - (canvas.height * 0.38) - 10);
                 ctx.textAlign = 'left';
             }
 
-            detections.forEach(det => {
-                const strokeColor = det.color || '#00FF00';
+            // 2. Draw acne detections (circles & class labels)
+            if (detections && detections.length > 0) {
+                detections.forEach(det => {
+                    const strokeColor = det.color || '#00FF00';
 
-                // Programmatically mirror x-coordinate only for selfie camera mode:
-                const isMirroredSelfie = !activePhotoElement && currentFacingMode === 'user';
-                const drawX = isMirroredSelfie ? (canvas.width - det.x) : det.x;
+                    // Programmatically mirror x-coordinate only for selfie camera mode:
+                    const isMirroredSelfie = !activePhotoElement && currentFacingMode === 'user';
+                    const drawX = isMirroredSelfie ? (canvas.width - det.x) : det.x;
 
-                // Bounding Circle
-                ctx.beginPath();
-                ctx.arc(drawX, det.y, det.r, 0, 2 * Math.PI);
-                ctx.strokeStyle = strokeColor;
-                ctx.lineWidth = 3;
-                ctx.stroke();
+                    // Bounding Circle
+                    ctx.beginPath();
+                    ctx.arc(drawX, det.y, det.r, 0, 2 * Math.PI);
+                    ctx.strokeStyle = strokeColor;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
 
-                // Font for class key & confidence
-                ctx.font = '16px "VT323", monospace';
-                ctx.fillStyle = strokeColor;
-                const label = `${det.class_key || 'ACNE'}:${Math.round(det.conf * 100)}%`;
-                ctx.fillText(label, Math.max(5, drawX - det.r), Math.max(20, det.y - det.r - 5));
-            });
+                    // Font for class key & confidence
+                    ctx.font = '16px "VT323", monospace';
+                    ctx.fillStyle = strokeColor;
+                    const label = `${det.class_key || 'ACNE'}:${Math.round(det.conf * 100)}%`;
+                    ctx.fillText(label, Math.max(5, drawX - det.r), Math.max(20, det.y - det.r - 5));
+                });
+            }
         }
 
         function finish10SecondScan() {
             isScanning = false;
+            isScanInFlight = false;
             clearInterval(scanIntervalId);
             progressOverlay.style.display = 'none';
 
@@ -821,11 +881,13 @@
             scanBtn.textContent = 'RE-SCAN (10S)';
             scanBtn.style.background = 'white';
             scanBtn.style.color = 'black';
-            statusText.textContent = 'STATUS: 10S SCAN COMPLETE - DIAGNOSIS GENERATED';
 
-            // Draw final frozen detections on canvas
-            if (bestFrameDetections.length > 0) {
-                drawDetectionsOnCanvas(bestFrameDetections, false);
+            // Redraw final best detections
+            if (bestFrameDetections && bestFrameDetections.length > 0) {
+                drawDetectionsOnCanvas(bestFrameDetections);
+                statusText.textContent = `STATUS: 10S SCAN COMPLETE - ${bestFrameDetections.length} LESIONS IDENTIFIED`;
+            } else {
+                statusText.textContent = 'STATUS: 10S SCAN COMPLETE - NO ACNE DETECTED';
             }
 
             // Display final diagnostic report HUD
@@ -847,6 +909,7 @@
 
             // Final Plain-Language Skin Condition Description
             skinSummary.innerHTML = `<strong>SUMMARY:</strong> ${analysis.skin_description}`;
+
 
             // Zone Breakdown Table
             if (analysis.zone_breakdown) {

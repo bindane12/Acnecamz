@@ -89,10 +89,10 @@ def bbox_to_circle(x1, y1, x2, y2):
 import clinical_scoring
 
 @app.post("/detect")
-async def detect(file: UploadFile = File(...)):
+def detect(file: UploadFile = File(...)):
     try:
         # Read image bytes
-        contents = await file.read()
+        contents = file.file.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
