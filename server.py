@@ -151,6 +151,7 @@ async def detect(file: UploadFile = File(...)):
 from fastapi.responses import FileResponse
 
 @app.get("/")
+@app.head("/")
 async def read_index():
     if os.path.exists("index.html"):
         return FileResponse("index.html")
@@ -158,8 +159,13 @@ async def read_index():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model": model.names}
+    return {
+        "status": "ok",
+        "model_path": model_path or "fallback",
+        "classes": model.names if model else {}
+    }
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 7860))
+    port = int(os.environ.get("PORT", 8001))
     uvicorn.run("server:app", host="0.0.0.0", port=port, reload=True)
+

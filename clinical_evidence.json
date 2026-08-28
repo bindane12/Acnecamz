@@ -274,19 +274,28 @@
   "synergies_and_conflicts": {
     "synergies": [
       {
-        "pair": ["Topical Retinoids (Adapalene)", "Benzoyl Peroxide (BPO)"],
+        "pair": [
+          "Topical Retinoids (Adapalene)",
+          "Benzoyl Peroxide (BPO)"
+        ],
         "name": "Epiduo Synergy Protocol",
         "description": "Combining adapalene (keratolytic/anti-inflammatory) with benzoyl peroxide (bactericidal) provides superior clinical efficacy over monotherapy by targeting multiple pathogenic pathways simultaneously.",
         "usage": "Use BPO in AM routine and Adapalene in PM routine to minimize irritation while maintaining peak efficacy."
       },
       {
-        "pair": ["Niacinamide (Topical)", "Salicylic Acid (BHA)"],
+        "pair": [
+          "Niacinamide (Topical)",
+          "Salicylic Acid (BHA)"
+        ],
         "name": "Pore Clearance & Barrier Shield Synergy",
         "description": "Salicylic acid unclogs follicular pores while Niacinamide strengthens stratum corneum lipids and lowers sebum production.",
         "usage": "Apply Niacinamide serum followed by BHA treatment."
       },
       {
-        "pair": ["Azelaic Acid", "Niacinamide (Topical)"],
+        "pair": [
+          "Azelaic Acid",
+          "Niacinamide (Topical)"
+        ],
         "name": "Dual-Action Pigment & Erythema Defense",
         "description": "Azelaic acid inhibits tyrosinase while Niacinamide inhibits melanosome transfer, providing synergistic fading of post-acne dark marks.",
         "usage": "Layer Niacinamide before Azelaic acid application in morning routine."
@@ -294,13 +303,19 @@
     ],
     "conflicts": [
       {
-        "pair": ["Topical Retinoids (Adapalene)", "Salicylic Acid (BHA)"],
+        "pair": [
+          "Topical Retinoids (Adapalene)",
+          "Salicylic Acid (BHA)"
+        ],
         "name": "Exfoliation Overload Risk",
         "description": "Simultaneous application of high-potency retinoids and leave-on BHAs can compromise the skin barrier and cause excessive desquamation, erythema, and dryness.",
         "resolution": "Alternate nights: Use Retinoid on Night A, BHA Exfoliant on Night B."
       },
       {
-        "pair": ["Topical Retinoids (Adapalene)", "Benzoyl Peroxide (BPO)"],
+        "pair": [
+          "Topical Retinoids (Adapalene)",
+          "Benzoyl Peroxide (BPO)"
+        ],
         "name": "Co-Application Irritation Rule",
         "description": "Applying unformulated retinoids and benzoyl peroxide at the exact same moment may trigger skin stinging. (Note: fixed-dose combination formulations handle this via chemical stabilization).",
         "resolution": "Split timing: Benzoyl Peroxide in Morning (AM), Retinoid at Night (PM)."
