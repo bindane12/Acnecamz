@@ -799,8 +799,8 @@
                         body: formData
                     });
 
-                    if (response.ok) {
-                        const result = await response.json();
+                    const result = await response.json().catch(() => null);
+                    if (response.ok && result && !result.error && !result.detail) {
                         framesScannedCount++;
                         if (result.detections) {
                             liveDetectedLesions = result.detections;
@@ -812,7 +812,10 @@
                             statusText.textContent = `STATUS: SCANNING... [FRAMES: ${framesScannedCount} | ACNE DETECTED: ${result.detections.length}]`;
                         }
                     } else {
-                        showError(`API ERROR (${response.status}): Cannot reach ${targetUrl}`);
+                        const detail = typeof result?.detail === 'string'
+                            ? result.detail
+                            : (typeof result?.error === 'string' ? result.error : 'Unable to process this scan frame.');
+                        showError(`API ERROR (${response.status}): ${detail}`);
                     }
                 } catch (err) {
                     console.error("Scan frame error:", err);

@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 import cv2
@@ -97,7 +97,7 @@ def detect(file: UploadFile = File(...)):
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         if img is None:
-            return {"error": "Invalid image file. Unable to decode format."}
+            raise HTTPException(status_code=422, detail="Invalid image file. Unable to decode format.")
 
         img_h, img_w = img.shape[:2]
 
@@ -143,10 +143,15 @@ def detect(file: UploadFile = File(...)):
                 "skincare_routine": analysis_result["skincare_routine"]
             }
         }
-    except Exception as e:
+    except HTTPException:
+        raise
+    except Exception:
         import traceback
         traceback.print_exc()
-        return {"error": f"Inference error: {str(e)}"}
+        raise HTTPException(
+            status_code=500,
+            detail="Detection inference failed. Please try again; if the problem continues, check the server logs."
+        )
 
 from fastapi.responses import FileResponse
 
@@ -168,4 +173,3 @@ def health():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8001))
     uvicorn.run("server:app", host="0.0.0.0", port=port, reload=True)
-
