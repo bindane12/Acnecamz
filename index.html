@@ -658,6 +658,7 @@
         });
 
         let isScanInFlight = false;
+        let isFinalizingScan = false;
         let framesScannedCount = 0;
         let liveDetectedLesions = [];
 
@@ -678,8 +679,11 @@
         function start10SecondScan() {
             isScanning = true;
             isScanInFlight = false;
+            isFinalizingScan = false;
             framesScannedCount = 0;
             liveDetectedLesions = [];
+            bestFrameDetections = [];
+            lastAnalysisResult = null;
             scanStartTime = Date.now();
             scanBtn.disabled = true;
             scanBtn.textContent = 'SCANNING...';
@@ -815,6 +819,10 @@
                     showError(`CONNECT ERROR: Unable to reach API at ${targetUrl}.`);
                 } finally {
                     isScanInFlight = false;
+                    if (isFinalizingScan) {
+                        finalize10SecondScan();
+                        return;
+                    }
                     // Trigger next frame quickly
                     if (isScanning && !activePhotoElement) {
                         setTimeout(runScanLoop, 60);
@@ -873,9 +881,23 @@
 
         function finish10SecondScan() {
             isScanning = false;
-            isScanInFlight = false;
             clearInterval(scanIntervalId);
             progressOverlay.style.display = 'none';
+
+            // A cloud inference request may have started before the 10-second
+            // timer ended. Keep its valid result instead of finalizing the
+            // report as clear before that response arrives.
+            if (isScanInFlight) {
+                isFinalizingScan = true;
+                statusText.textContent = 'STATUS: SCAN COMPLETE - PROCESSING FINAL FRAME...';
+                return;
+            }
+
+            finalize10SecondScan();
+        }
+
+        function finalize10SecondScan() {
+            isFinalizingScan = false;
 
             scanBtn.disabled = false;
             scanBtn.textContent = 'RE-SCAN (10S)';
