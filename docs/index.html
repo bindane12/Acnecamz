@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acne Scanner 95 - 10s Clinical Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --grid-color: #000000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+
+            /* 90s Grid Background */
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: -1px -1px;
+        }
+
+        .window {
+            background: white;
+            border: 3px solid black;
+            box-shadow: 8px 8px 0px black;
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2rem;
+        }
+
+        .title-bar {
+            background: black;
+            color: white;
+            padding: 5px 10px;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid black;
+        }
+
+        .title-bar-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .title-btn {
+            width: 15px;
+            height: 15px;
+            background: white;
+            border: 2px solid black;
+        }
+
+        .content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: white;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-decoration: underline;
+        }
+
+        p {
+            font-size: 1.2rem;
+        }
+
+        .main-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .main-layout {
+                flex-direction: row;
+            }
+            .scanner-column {
+                flex: 1.2;
+            }
+            .report-column {
+                flex: 1;
+            }
+        }
+
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #ccc;
+            border: 3px solid black;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: inset 4px 4px 0px rgba(0, 0, 0, 0.2);
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* Scan Progress Bar Overlay */
+        .progress-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.85);
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 8px 12px;
+            font-size: 1.3rem;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .progress-bar-fill {
+            height: 12px;
+            background: #00ff00;
+            width: 0%;
+            transition: width 0.1s linear;
+            border: 1px solid black;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        button {
+            background: white;
+            border: 3px solid black;
+            color: black;
+            padding: 8px 24px;
+            font-family: inherit;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px black;
+        }
+
+        button:hover {
+            background: black;
+            color: white;
+        }
+
+        button:active {
+            box-shadow: 0px 0px 0px black;
+            transform: translate(4px, 4px);
+        }
+
+        /* Retro Legend */
+        .legend-box {
+            border: 2px solid black;
+            padding: 10px;
+            margin-top: 15px;
+            background: #f9f9f9;
+        }
+
+        .legend-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            border-bottom: 2px solid black;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid black;
+            display: inline-block;
+        }
+
+        /* Clinical Report Card */
+        .report-card {
+            border: 3px solid black;
+            padding: 15px;
+            background: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: 100%;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid black;
+            padding-bottom: 5px;
+        }
+
+        .severity-badge {
+            font-size: 1.3rem;
+            padding: 2px 8px;
+            border: 2px solid black;
+            font-weight: bold;
+        }
+
+        .summary-box {
+            border: 2px dashed black;
+            padding: 10px;
+            background: #fff;
+            font-size: 1.15rem;
+            line-height: 1.35;
+            min-height: 80px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 4px;
+        }
+
+        .zone-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1rem;
+            background: #fff;
+        }
+
+        .zone-table th, .zone-table td {
+            border: 1px solid black;
+            padding: 4px 6px;
+            text-align: left;
+        }
+
+        .zone-table th {
+            background: #eee;
+        }
+
+        .routine-list {
+            list-style: square;
+            padding-left: 20px;
+            font-size: 1.05rem;
+        }
+
+        .status-bar {
+            border-top: 3px solid black;
+            padding: 5px 10px;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            background: #eee;
+        }
+
+        #error-msg {
+            color: red;
+            font-weight: bold;
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+            border: 2px dashed red;
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="window">
+        <div class="title-bar">
+            <span>ACNE_CLINICAL_SCANNER_V2.EXE</span>
+            <div class="title-bar-buttons">
+                <div class="title-btn"></div>
+                <div class="title-btn"></div>
+                <div class="title-btn"></div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="header">
+                <h1>Clinical Face & Acne Scanner</h1>
+                <p>10-Second Facial Scan & Skincare Diagnostics</p>
+            </div>
+
+            <div class="main-layout">
+                <!-- Left Column: Camera Scanner & Controls -->
+                <div class="scanner-column">
+                    <div class="scanner-container">
+                        <div class="video-wrapper">
+                            <video id="video" autoplay playsinline muted></video>
+                            <img id="uploaded-img" style="display:none; position:absolute; width:100%; height:100%; object-fit:cover; z-index:4;" alt="Uploaded Skin Frame">
+                            <canvas id="canvas"></canvas>
+
+                            <!-- 10-Second Scan Overlay -->
+                            <div id="progress-overlay" class="progress-overlay">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span id="scan-timer-label">SCANNING: 10s REMAINING</span>
+                                    <span id="scan-percent-label">0%</span>
+                                </div>
+                                <div style="background:#222; border:1px solid #00ff00; padding:2px;">
+                                    <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls" style="flex-wrap: wrap;">
+                        <button id="start-btn">START CAMERA</button>
+                        <button id="flip-btn" style="display: none;">FLIP CAMERA 🔄</button>
+                        <button id="upload-btn">📷 UPLOAD / TAKE PHOTO</button>
+                        <input type="file" id="file-input" accept="image/*" capture="user" style="display: none;">
+                        <button id="scan-btn" style="display: none;">START 10S SCAN</button>
+                    </div>
+
+                    <div style="margin-top: 10px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
+                        <label for="server-ip-input" style="font-weight: bold;">API URL / SERVER IP:</label>
+                        <input type="text" id="server-ip-input" placeholder="e.g. https://xxxx.onrender.com or IP" style="padding: 4px 8px; border: 2px solid black; font-family: inherit; font-size: 1.1rem; width: 260px;">
+                    </div>
+
+                    <div class="legend-box">
+                        <div class="legend-title">LESION CLASSIFICATION TAXONOMY</div>
+                        <div class="legend-items">
+                            <div class="legend-item"><span class="color-dot" style="background:#00FF00"></span> Comedone</div>
+                            <div class="legend-item"><span class="color-dot" style="background:#FF3333"></span> Papule</div>
+                            <div class="legend-item"><span class="color-dot" style="background:#FFFF00"></span> Pustule</div>
+                            <div class="legend-item"><span class="color-dot" style="background:#AA00FF"></span> Cyst/Nodule</div>
+                            <div class="legend-item"><span class="color-dot" style="background:#00E5FF"></span> Dark Mark (PIH)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Final Clinical Scan Report -->
+                <div class="report-column">
+                    <div class="report-card">
+                        <div class="report-header">
+                            <span>CLINICAL DIAGNOSTIC REPORT</span>
+                            <span id="severity-badge" class="severity-badge" style="background:#eee">READY</span>
+                        </div>
+
+                        <div class="summary-box" id="skin-summary">
+                            Press <strong>"START 10S SCAN"</strong> or upload a facial photo. The system will scan your facial skin and generate a clinical diagnosis & skincare recommendation.
+                        </div>
+
+                        <div>
+                            <div class="section-title">FACIAL ZONE BREAKDOWN</div>
+                            <table class="zone-table">
+                                <thead>
+                                    <tr>
+                                        <th>Zone</th>
+                                        <th>Lesions</th>
+                                        <th>Primary Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="zone-table-body">
+                                    <tr><td colspan="3" style="text-align:center;">No scan data yet</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div>
+                            <div class="section-title">TARGETED SKINCARE ROUTINE</div>
+                            <div style="font-weight:bold; margin-top:2px;">☀️ Morning (AM):</div>
+                            <ul id="am-routine" class="routine-list">
+                                <li>Gentle Hydrating Cleanser</li>
+                                <li>SPF 30+ Sunscreen</li>
+                            </ul>
+                            <div style="font-weight:bold; margin-top:6px;">🌙 Evening (PM):</div>
+                            <ul id="pm-routine" class="routine-list">
+                                <li>Gentle Cleanser</li>
+                                <li>Non-Comedogenic Moisturizer</li>
+                            </ul>
+                        </div>
+
+                        <div id="correlations-container" style="display: none; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px;">
+                            <div class="section-title">CLINICAL CORRELATIONS & MATRIX</div>
+                            <div id="correlations-content" style="font-size: 1rem; line-height: 1.35; display: flex; flex-direction: column; gap: 8px;">
+                                <!-- Dynamic pattern insights, co-occurrence risks, synergies & conflicts -->
+                            </div>
+                        </div>
+
+                        <div id="scientific-evidence-container" style="display: none; border-top: 2px dashed black; padding-top: 10px; margin-top: 12px;">
+                            <div class="section-title">SCIENTIFIC EVIDENCE & REFERENCES</div>
+                            <div id="evidence-basis" style="font-size: 1rem; line-height: 1.35; margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px;">
+                                <!-- Dynamic descriptions -->
+                            </div>
+                            <div style="font-weight:bold; margin-top:6px; font-size:1.15rem; text-decoration:underline;">CLINICAL PUBLICATIONS:</div>
+                            <ul id="evidence-links" class="routine-list" style="margin-top: 2px; list-style-type: square; padding-left: 18px;">
+                                <!-- Dynamic PubMed links -->
+                            </ul>
+                        </div>
+
+                        <!-- Medical Diagnostic Disclaimer -->
+                        <div style="border-top: 2px dashed black; padding-top: 8px; margin-top: 12px; font-size: 0.95rem; background: #fffbe6; padding: 8px; border: 1px solid #e6c200;">
+                            <strong>⚠️ MEDICAL DISCLAIMER:</strong> This AI diagnostic tool is designed for educational & informational tracking purposes only. It does not replace clinical evaluation or diagnosis by a licensed dermatologist.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="error-msg"></div>
+        </div>
+
+        <div class="status-bar">
+            <span id="status-text">STATUS: STANDBY</span>
+            <span id="time-text">00:00</span>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const uploadedImg = document.getElementById('uploaded-img');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const startBtn = document.getElementById('start-btn');
+        const flipBtn = document.getElementById('flip-btn');
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
+        const scanBtn = document.getElementById('scan-btn');
+        
+        const statusText = document.getElementById('status-text');
+        const errorMsg = document.getElementById('error-msg');
+
+        const progressOverlay = document.getElementById('progress-overlay');
+        const scanTimerLabel = document.getElementById('scan-timer-label');
+        const scanPercentLabel = document.getElementById('scan-percent-label');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+
+        const severityBadge = document.getElementById('severity-badge');
+        const skinSummary = document.getElementById('skin-summary');
+        const zoneTableBody = document.getElementById('zone-table-body');
+        const amRoutine = document.getElementById('am-routine');
+        const pmRoutine = document.getElementById('pm-routine');
+
+        let isScanning = false;
+        let scanStartTime = 0;
+        const SCAN_DURATION_MS = 10000; // 10 Seconds
+        let scanIntervalId;
+        let lastAnalysisResult = null;
+        let bestFrameDetections = [];
+
+        let currentFacingMode = 'user'; // 'user' (front selfie) or 'environment' (back)
+        let currentStream = null;
+        let activePhotoElement = null;
+
+        // Clock logic
+        setInterval(() => {
+            const d = new Date();
+            document.getElementById('time-text').textContent =
+                d.getHours().toString().padStart(2, '0') + ':' +
+                d.getMinutes().toString().padStart(2, '0');
+        }, 1000);
+
+        async function startCamera() {
+            errorMsg.style.display = 'none';
+            statusText.textContent = 'STATUS: INITIALIZING CAMERA...';
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const isHttp = window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                if (isHttp) {
+                    showError("SECURITY RESTRICTION: Mobile browsers require HTTPS for live camera. Please use '📷 UPLOAD / TAKE PHOTO' or visit via https://");
+                } else {
+                    showError("CAMERA ERROR: Browser blocks camera access. Check permissions or use '📷 UPLOAD / TAKE PHOTO'");
+                }
+                return;
+            }
+
+            // Clean up existing stream
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+
+            try {
+                // Switch back to video mode
+                uploadedImg.style.display = 'none';
+                video.style.display = 'block';
+                activePhotoElement = null;
+
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: currentFacingMode },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                currentStream = stream;
+                video.srcObject = stream;
+
+                // Mirror front camera, do not mirror back camera
+                video.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+
+                video.onloadedmetadata = async () => {
+                    try {
+                        await video.play();
+                    } catch (playErr) {
+                        console.warn("Autoplay playback error:", playErr);
+                    }
+                    canvas.width = video.videoWidth || 640;
+                    canvas.height = video.videoHeight || 480;
+                    startBtn.style.display = 'none';
+                    flipBtn.style.display = 'inline-block';
+                    scanBtn.style.display = 'inline-block';
+                    statusText.textContent = `STATUS: CAMERA READY (${currentFacingMode.toUpperCase()})`;
+                    ensureOverlayLoop();
+                };
+            } catch (err) {
+                console.error("Camera Error:", err);
+                showError("CAMERA ERROR: Unable to access camera. Use '📷 UPLOAD / TAKE PHOTO' button below.");
+            }
+        }
+
+        // Automatic API Health Ping on Load to Pre-warm Cloud Instances
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const healthUrl = getApiUrl().replace('/detect', '/health');
+                const res = await fetch(healthUrl, { method: 'GET' });
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log("Backend online:", data);
+                }
+            } catch (e) {
+                console.log("Backend warm-up ping in background:", e);
+            }
+        });
+
+        // Camera flip handler
+        flipBtn.addEventListener('click', () => {
+            currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+            startCamera();
+        });
+
+        // Photo upload / take photo handler
+        uploadBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            errorMsg.style.display = 'none';
+            statusText.textContent = 'STATUS: LOADING PHOTO...';
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Stop webcam if active
+                    if (currentStream) {
+                        currentStream.getTracks().forEach(track => track.stop());
+                        currentStream = null;
+                    }
+                    video.style.display = 'none';
+                    uploadedImg.src = event.target.result;
+                    uploadedImg.style.display = 'block';
+
+                    canvas.width = img.naturalWidth || 640;
+                    canvas.height = img.naturalHeight || 480;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    activePhotoElement = img;
+                    startBtn.style.display = 'none';
+                    flipBtn.style.display = 'none';
+                    scanBtn.style.display = 'inline-block';
+                    statusText.textContent = 'STATUS: PHOTO READY FOR SCAN';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+            statusText.textContent = 'STATUS: ERROR';
+        }
+
+        startBtn.addEventListener('click', startCamera);
+
+        scanBtn.addEventListener('click', () => {
+            if (isScanning) return; // Prevent double trigger
+            start10SecondScan();
+        });
+
+        let isScanInFlight = false;
+        let isFinalizingScan = false;
+        let framesScannedCount = 0;
+        let liveDetectedLesions = [];
+
+        // Continuous overlay loop for face oval & live detections
+        let isOverlayLoopRunning = false;
+        function ensureOverlayLoop() {
+            if (isOverlayLoopRunning) return;
+            isOverlayLoopRunning = true;
+            function render() {
+                if (currentStream || activePhotoElement) {
+                    drawDetectionsOnCanvas(isScanning ? liveDetectedLesions : (bestFrameDetections || []));
+                }
+                requestAnimationFrame(render);
+            }
+            requestAnimationFrame(render);
+        }
+
+        function start10SecondScan() {
+            isScanning = true;
+            isScanInFlight = false;
+            isFinalizingScan = false;
+            framesScannedCount = 0;
+            liveDetectedLesions = [];
+            bestFrameDetections = [];
+            lastAnalysisResult = null;
+            scanStartTime = Date.now();
+            scanBtn.disabled = true;
+            scanBtn.textContent = 'SCANNING...';
+            scanBtn.style.background = '#333';
+            scanBtn.style.color = '#fff';
+
+            progressOverlay.style.display = 'flex';
+            statusText.textContent = 'STATUS: 10S FACIAL SCAN IN PROGRESS...';
+            
+            // Set temporary report HUD state
+            severityBadge.textContent = 'SCANNING';
+            severityBadge.style.background = '#FFFF00';
+            severityBadge.style.color = 'black';
+            skinSummary.innerHTML = '⚡ <strong>SCANNING IN PROGRESS...</strong> Please hold still while YOLO maps your facial skin zones.';
+
+            ensureOverlayLoop();
+
+            // Run detection loop during 10 seconds
+            runScanLoop();
+
+            // Progress Bar & Timer Update
+            scanIntervalId = setInterval(() => {
+                const elapsed = Date.now() - scanStartTime;
+                const remainingSec = Math.max(0, Math.ceil((SCAN_DURATION_MS - elapsed) / 1000));
+                const percent = Math.min(100, Math.round((elapsed / SCAN_DURATION_MS) * 100));
+
+                scanTimerLabel.textContent = `SCANNING: ${remainingSec}s REMAINING`;
+                scanPercentLabel.textContent = `${percent}%`;
+                progressBarFill.style.width = `${percent}%`;
+
+                if (elapsed >= SCAN_DURATION_MS) {
+                    finish10SecondScan();
+                }
+            }, 100);
+        }
+
+        function getApiUrl() {
+            const inputVal = document.getElementById('server-ip-input')?.value.trim();
+            const isPageHttps = window.location.protocol === 'https:';
+
+            // 1. Full URL provided explicitly by user (http://... or https://...)
+            if (inputVal && (inputVal.startsWith('http://') || inputVal.startsWith('https://'))) {
+                if (isPageHttps && inputVal.startsWith('http://')) {
+                    showError("MIXED CONTENT WARNING: HTTPS page cannot access HTTP. Use https:// URL.");
+                }
+                return inputVal.endsWith('/detect') ? inputVal : `${inputVal.replace(/\/$/, '')}/detect`;
+            }
+
+            // 2. Custom host/IP entered manually
+            if (inputVal) {
+                const hostOnly = inputVal.replace(/\/.*$/, '');
+                const proto = isPageHttps ? 'https' : 'http';
+                return `${proto}://${hostOnly}:8001/detect`;
+            }
+
+            // 3. Current origin (Render cloud deployment or localhost)
+            if (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
+                const hn = window.location.hostname;
+                const isLocal = (hn === 'localhost' || hn === '127.0.0.1' || hn.startsWith('192.168.') || hn.startsWith('10.') || hn.startsWith('172.'));
+                if (isLocal) {
+                    const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
+                    const port = window.location.port || '8001';
+                    return `${proto}//${hn}:${port}/detect`;
+                }
+                return `${window.location.origin}/detect`;
+            }
+
+            return `http://localhost:8001/detect`;
+        }
+
+        async function runScanLoop() {
+            if (!isScanning) return;
+            if (isScanInFlight) return; // Prevent network congestion
+
+            const sourceEl = activePhotoElement || video;
+            if (!sourceEl) return;
+
+            const natW = activePhotoElement ? (activePhotoElement.naturalWidth || 640) : (video.videoWidth || 640);
+            const natH = activePhotoElement ? (activePhotoElement.naturalHeight || 480) : (video.videoHeight || 480);
+
+            // Scale to max 640px for ultra-fast network transfer & CPU inference
+            const maxDim = 640;
+            const scale = Math.min(1.0, maxDim / Math.max(natW, natH));
+            const targetW = Math.round(natW * scale);
+            const targetH = Math.round(natH * scale);
+
+            if (canvas.width !== targetW || canvas.height !== targetH) {
+                canvas.width = targetW;
+                canvas.height = targetH;
+            }
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = targetW;
+            tempCanvas.height = targetH;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(sourceEl, 0, 0, targetW, targetH);
+
+            isScanInFlight = true;
+
+            tempCanvas.toBlob(async (blob) => {
+                if (!blob || !isScanning) {
+                    isScanInFlight = false;
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', blob, 'frame.jpg');
+
+                const targetUrl = getApiUrl();
+                try {
+                    const response = await fetch(targetUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        framesScannedCount++;
+                        if (result.detections) {
+                            liveDetectedLesions = result.detections;
+                            // Keep best frame with highest lesion count
+                            if (!bestFrameDetections || result.detections.length >= (bestFrameDetections?.length || 0)) {
+                                bestFrameDetections = result.detections;
+                                lastAnalysisResult = result;
+                            }
+                            statusText.textContent = `STATUS: SCANNING... [FRAMES: ${framesScannedCount} | ACNE DETECTED: ${result.detections.length}]`;
+                        }
+                    } else {
+                        showError(`API ERROR (${response.status}): Cannot reach ${targetUrl}`);
+                    }
+                } catch (err) {
+                    console.error("Scan frame error:", err);
+                    showError(`CONNECT ERROR: Unable to reach API at ${targetUrl}.`);
+                } finally {
+                    isScanInFlight = false;
+                    if (isFinalizingScan) {
+                        finalize10SecondScan();
+                        return;
+                    }
+                    // Trigger next frame quickly
+                    if (isScanning && !activePhotoElement) {
+                        setTimeout(runScanLoop, 60);
+                    }
+                }
+            }, 'image/jpeg', 0.80);
+        }
+
+        function drawDetectionsOnCanvas(detections) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw facial zone boundary guide overlay whenever camera is active
+            if (!activePhotoElement) {
+                ctx.strokeStyle = '#00FF00';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 8]);
+                // Face Oval Guide
+                ctx.beginPath();
+                ctx.ellipse(canvas.width / 2, canvas.height / 2, canvas.width * 0.28, canvas.height * 0.38, 0, 0, 2 * Math.PI);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Guide Label
+                ctx.font = '18px "VT323", monospace';
+                ctx.fillStyle = '#00FF00';
+                ctx.textAlign = 'center';
+                const guideMsg = isScanning ? "SCANNING ACTIVE - HOLD STILL" : "ALIGN FACE WITHIN OVAL";
+                ctx.fillText(guideMsg, canvas.width / 2, (canvas.height / 2) - (canvas.height * 0.38) - 10);
+                ctx.textAlign = 'left';
+            }
+
+            // 2. Draw acne detections (circles & class labels)
+            if (detections && detections.length > 0) {
+                detections.forEach(det => {
+                    const strokeColor = det.color || '#00FF00';
+
+                    // Programmatically mirror x-coordinate only for selfie camera mode:
+                    const isMirroredSelfie = !activePhotoElement && currentFacingMode === 'user';
+                    const drawX = isMirroredSelfie ? (canvas.width - det.x) : det.x;
+
+                    // Bounding Circle
+                    ctx.beginPath();
+                    ctx.arc(drawX, det.y, det.r, 0, 2 * Math.PI);
+                    ctx.strokeStyle = strokeColor;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    // Font for class key & confidence
+                    ctx.font = '16px "VT323", monospace';
+                    ctx.fillStyle = strokeColor;
+                    const label = `${det.class_key || 'ACNE'}:${Math.round(det.conf * 100)}%`;
+                    ctx.fillText(label, Math.max(5, drawX - det.r), Math.max(20, det.y - det.r - 5));
+                });
+            }
+        }
+
+        function finish10SecondScan() {
+            isScanning = false;
+            clearInterval(scanIntervalId);
+            progressOverlay.style.display = 'none';
+
+            // A cloud inference request may have started before the 10-second
+            // timer ended. Keep its valid result instead of finalizing the
+            // report as clear before that response arrives.
+            if (isScanInFlight) {
+                isFinalizingScan = true;
+                statusText.textContent = 'STATUS: SCAN COMPLETE - PROCESSING FINAL FRAME...';
+                return;
+            }
+
+            finalize10SecondScan();
+        }
+
+        function finalize10SecondScan() {
+            isFinalizingScan = false;
+
+            scanBtn.disabled = false;
+            scanBtn.textContent = 'RE-SCAN (10S)';
+            scanBtn.style.background = 'white';
+            scanBtn.style.color = 'black';
+
+            // Redraw final best detections
+            if (bestFrameDetections && bestFrameDetections.length > 0) {
+                drawDetectionsOnCanvas(bestFrameDetections);
+                statusText.textContent = `STATUS: 10S SCAN COMPLETE - ${bestFrameDetections.length} LESIONS IDENTIFIED`;
+            } else {
+                statusText.textContent = 'STATUS: 10S SCAN COMPLETE - NO ACNE DETECTED';
+            }
+
+            // Display final diagnostic report HUD
+            if (lastAnalysisResult && lastAnalysisResult.analysis) {
+                updateReportHUD(lastAnalysisResult.analysis);
+            } else {
+                skinSummary.textContent = "Scan completed. Your skin appears clear with no active acne detected.";
+                severityBadge.textContent = "CLEAR";
+                severityBadge.style.background = "#00FF00";
+                document.getElementById('scientific-evidence-container').style.display = 'none';
+            }
+        }
+
+        function updateReportHUD(analysis) {
+            // Severity Grade Badge
+            severityBadge.textContent = analysis.hayashi_grade.toUpperCase();
+            severityBadge.style.background = analysis.severity_color || '#00FF00';
+            severityBadge.style.color = (analysis.severity_color === '#FFFF00' || analysis.severity_color === '#00FF00') ? 'black' : 'white';
+
+            // Final Plain-Language Skin Condition Description
+            skinSummary.innerHTML = `<strong>SUMMARY:</strong> ${analysis.skin_description}`;
+
+
+            // Zone Breakdown Table
+            if (analysis.zone_breakdown) {
+                let rowsHTML = '';
+                for (const [zKey, zData] of Object.entries(analysis.zone_breakdown)) {
+                    if (zData.total > 0) {
+                        let maxType = "comedone";
+                        let maxVal = -1;
+                        for (const typeKey of ["comedone", "papule", "pustule", "nodule_cyst", "hyperpigmentation"]) {
+                            if (zData[typeKey] > maxVal) {
+                                maxVal = zData[typeKey];
+                                maxType = typeKey;
+                            }
+                        }
+                        rowsHTML += `<tr><td>${zData.name}</td><td>${zData.total}</td><td>${maxType}</td></tr>`;
+                    }
+                }
+                zoneTableBody.innerHTML = rowsHTML || '<tr><td colspan="3" style="text-align:center;">No localized acne detected</td></tr>';
+            }
+
+            // Skincare Routine & Actives
+            if (analysis.skincare_routine) {
+                amRoutine.innerHTML = analysis.skincare_routine.AM.map(item => `<li>${item}</li>`).join('');
+                pmRoutine.innerHTML = analysis.skincare_routine.PM.map(item => `<li>${item}</li>`).join('');
+            }
+
+            // Clinical Correlations & Matrix
+            const correlationsContainer = document.getElementById('correlations-container');
+            const correlationsContent = document.getElementById('correlations-content');
+            
+            if (analysis.clinical_correlations) {
+                const corr = analysis.clinical_correlations;
+                let corrHTML = '';
+
+                // Spatial pattern insights
+                if (corr.pattern_insights && corr.pattern_insights.length > 0) {
+                    corrHTML += `<div style="font-weight:bold; background:#e6f2ff; padding:4px 8px; border:1px solid #0066cc; color:#004080;">🔍 SPATIAL PATTERN CORRELATIONS:</div>`;
+                    corr.pattern_insights.forEach(p => {
+                        const link = p.pmid ? ` <a href="${p.pubmed_url}" target="_blank" style="color:#0000ff; text-decoration:underline;">[PMID: ${p.pmid}]</a>` : '';
+                        corrHTML += `<div style="margin-left:8px;">• <strong>${p.name}:</strong> ${p.description} <br><span style="color:#003366;">↳ <em>Recommendation:</em> ${p.recommendation}</span>${link}</div>`;
+                    });
+                }
+
+                // Co-occurrence risks
+                if (corr.co_occurrence_risks && corr.co_occurrence_risks.length > 0) {
+                    corrHTML += `<div style="font-weight:bold; background:#fff0f0; padding:4px 8px; border:1px solid #cc0000; color:#800000; margin-top:4px;">⚠️ LESION CO-OCCURRENCE RISKS:</div>`;
+                    corr.co_occurrence_risks.forEach(r => {
+                        corrHTML += `<div style="margin-left:8px;">• <strong>${r.risk_title} [${r.severity}]:</strong> ${r.rationale} <br><span style="color:#660000;">↳ Protocol: ${r.protocol}</span></div>`;
+                    });
+                }
+
+                // Synergies & Conflicts
+                if ((corr.matched_synergies && corr.matched_synergies.length > 0) || (corr.matched_conflicts && corr.matched_conflicts.length > 0)) {
+                    corrHTML += `<div style="font-weight:bold; background:#f9f9f9; padding:4px 8px; border:1px solid #333; margin-top:4px;">🧪 INGREDIENT INTERACTION RULES:</div>`;
+                    if (corr.matched_synergies) {
+                        corr.matched_synergies.forEach(s => {
+                            corrHTML += `<div style="margin-left:8px; color:#006600;">✅ <strong>${s.name} (${s.pair.join(' + ')}):</strong> ${s.description} <br><em>↳ Usage: ${s.usage}</em></div>`;
+                        });
+                    }
+                    if (corr.matched_conflicts) {
+                        corr.matched_conflicts.forEach(c => {
+                            corrHTML += `<div style="margin-left:8px; color:#cc3300;">⚡ <strong>${c.name} (${c.pair.join(' + ')}):</strong> ${c.description} <br><em>↳ Resolution: ${c.resolution}</em></div>`;
+                        });
+                    }
+                }
+
+                if (corrHTML) {
+                    correlationsContainer.style.display = 'block';
+                    correlationsContent.innerHTML = corrHTML;
+                } else {
+                    correlationsContainer.style.display = 'none';
+                }
+            } else {
+                correlationsContainer.style.display = 'none';
+            }
+
+            // Scientific Evidence References
+            const evidenceContainer = document.getElementById('scientific-evidence-container');
+            const evidenceBasis = document.getElementById('evidence-basis');
+            const evidenceLinks = document.getElementById('evidence-links');
+
+            if (analysis.scientific_evidence && analysis.scientific_evidence.length > 0) {
+                evidenceContainer.style.display = 'block';
+
+                let basisHTML = '';
+                let linksHTML = '';
+
+                analysis.scientific_evidence.forEach(item => {
+                    basisHTML += `<div><strong>${item.active_name} (${item.concentration || 'N/A'}):</strong> ${item.scientific_basis}</div>`;
+                    if (item.pmid) {
+                        linksHTML += `<li style="margin-bottom: 6px;"><a href="${item.pubmed_url}" target="_blank" style="color: #0000ff; text-decoration: underline; font-weight: bold;">[PMID: ${item.pmid}]</a> ${item.citation} - "${item.title}" (<em>${item.journal}</em>)</li>`;
+                    }
+                });
+
+                evidenceBasis.innerHTML = basisHTML;
+                evidenceLinks.innerHTML = linksHTML || '<li>No direct publication links found</li>';
+            } else {
+                evidenceContainer.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>
